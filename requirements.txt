@@ -10,7 +10,7 @@ passlib[bcrypt]
 python-multipart
 redis
 celery
-pandas-ta==0.3.14b0
+pandas-ta==0.4.71b0
 yfinance
 scikit-learn
 xgboost
