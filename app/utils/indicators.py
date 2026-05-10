@@ -1,28 +1,28 @@
 import pandas as pd
-import pandas_ta as ta
+import ta
 
 
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    # RSI — suracheté / survendu
-    df["rsi"] = ta.rsi(df["Close"], length=14)
+    # RSI
+    df["rsi"] = ta.momentum.RSIIndicator(df["Close"], window=14).rsi()
 
-    # MACD — changement de tendance
-    macd = ta.macd(df["Close"], fast=12, slow=26, signal=9)
-    df["macd"] = macd["MACD_12_26_9"]
-    df["macd_signal"] = macd["MACDs_12_26_9"]
-    df["macd_hist"] = macd["MACDh_12_26_9"]
+    # MACD
+    macd = ta.trend.MACD(df["Close"], window_fast=12, window_slow=26, window_sign=9)
+    df["macd"] = macd.macd()
+    df["macd_signal"] = macd.macd_signal()
+    df["macd_hist"] = macd.macd_diff()
 
-    # Bollinger Bands — zone normale du prix
-    bbands = ta.bbands(df["Close"], length=20, std=2)
-    df["bb_upper"] = bbands["BBU_20_2.0_2.0"]
-    df["bb_middle"] = bbands["BBM_20_2.0_2.0"]
-    df["bb_lower"] = bbands["BBL_20_2.0_2.0"]
+    # Bollinger Bands
+    bb = ta.volatility.BollingerBands(df["Close"], window=20, window_dev=2)
+    df["bb_upper"] = bb.bollinger_hband()
+    df["bb_middle"] = bb.bollinger_mavg()
+    df["bb_lower"] = bb.bollinger_lband()
 
     # Features supplémentaires
     df["returns"] = df["Close"].pct_change()
-    df["volume_ma"] = ta.sma(df["Volume"], length=20)
+    df["volume_ma"] = ta.trend.SMAIndicator(df["Volume"], window=20).sma_indicator()
 
     # Supprimer les lignes avec des valeurs manquantes
     df.dropna(inplace=True)
