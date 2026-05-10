@@ -1,57 +1,45 @@
 import pandas as pd
-import ta
 
 
 def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    # RSI
-    df["rsi"] = ta.momentum.RSIIndicator(df["Close"], window=14).rsi()
+    delta = df["Close"].diff()
+    gain = delta.where(delta > 0, 0).rolling(14).mean()
+    loss = -delta.where(delta < 0, 0).rolling(14).mean()
+    rs = gain / loss
+    df["rsi"] = 100 - (100 / (1 + rs))
 
-    # MACD
-    macd = ta.trend.MACD(df["Close"], window_fast=12, window_slow=26, window_sign=9)
-    df["macd"] = macd.macd()
-    df["macd_signal"] = macd.macd_signal()
-    df["macd_hist"] = macd.macd_diff()
+    ema12 = df["Close"].ewm(span=12, adjust=False).mean()
+    ema26 = df["Close"].ewm(span=26, adjust=False).mean()
+    df["macd"] = ema12 - ema26
+    df["macd_signal"] = df["macd"].ewm(span=9, adjust=False).mean()
+    df["macd_hist"] = df["macd"] - df["macd_signal"]
 
-    # Bollinger Bands
-    bb = ta.volatility.BollingerBands(df["Close"], window=20, window_dev=2)
-    df["bb_upper"] = bb.bollinger_hband()
-    df["bb_middle"] = bb.bollinger_mavg()
-    df["bb_lower"] = bb.bollinger_lband()
+    df["bb_middle"] = df["Close"].rolling(20).mean()
+    std = df["Close"].rolling(20).std()
+    df["bb_upper"] = df["bb_middle"] + 2 * std
+    df["bb_lower"] = df["bb_middle"] - 2 * std
 
-    # Features supplémentaires
     df["returns"] = df["Close"].pct_change()
-    df["volume_ma"] = ta.trend.SMAIndicator(df["Volume"], window=20).sma_indicator()
+    df["volume_ma"] = df["Volume"].rolling(20).mean()
 
-    # Supprimer les lignes avec des valeurs manquantes
     df.dropna(inplace=True)
-
     return df
 
 
 def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     feature_cols = [
-        "rsi",
-        "macd",
-        "macd_signal",
-        "macd_hist",
-        "bb_upper",
-        "bb_middle",
-        "bb_lower",
-        "returns",
-        "volume_ma",
-        "Close",
-        "Volume",
+        "rsi", "macd", "macd_signal", "macd_hist",
+        "bb_upper", "bb_middle", "bb_lower",
+        "returns", "volume_ma", "Close", "Volume",
     ]
     return df[feature_cols]
 
 
 def create_labels(df: pd.DataFrame, threshold: float = 0.001) -> pd.Series:
     future_returns = df["Close"].shift(-1) / df["Close"] - 1
-
     labels = pd.Series("HOLD", index=df.index)
     labels[future_returns > threshold] = "BUY"
     labels[future_returns < -threshold] = "SELL"
-
     return labels

@@ -1,4 +1,4 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
@@ -23,3 +23,4 @@ python-dotenv
 alembic
 pytest
 pytest-asyncio
+ta
