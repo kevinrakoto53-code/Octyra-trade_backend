@@ -18,5 +18,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str
     SMTP_PASSWORD: str
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
 
 settings = Settings()
