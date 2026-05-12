@@ -51,6 +51,6 @@ app.include_router(plans.router, prefix="/api")
 def root():
     return {"message": "OCTYRA API is running 🚀"}
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok"}
