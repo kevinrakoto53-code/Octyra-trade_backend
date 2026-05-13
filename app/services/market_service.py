@@ -2,6 +2,7 @@ import json
 import pandas as pd
 import yfinance as yf
 from app.core.redis import cache_get, cache_set
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ASSETS = {
     "BTC":     "BTC-USD",
@@ -104,12 +105,16 @@ def get_all_prices() -> list:
     if cached:
         return json.loads(cached)
 
-    prices = [get_price(asset) for asset in ASSETS.keys()]
-    
-    prices = [p for p in prices if "error" not in p]
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(get_price, asset): asset for asset in ASSETS.keys()}
+        prices = []
+        for future in as_completed(futures):
+            result = future.result()
+            if "error" not in result:
+                prices.append(result)
+
     cache_set(cache_key, json.dumps(prices), expire=60)
     return prices
-
 
 def get_candles(asset: str, period: str = "5d", interval: str = "1h") -> list:
     cache_key = f"candles:{asset}:{period}:{interval}"
