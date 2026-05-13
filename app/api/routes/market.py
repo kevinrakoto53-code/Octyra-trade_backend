@@ -7,6 +7,7 @@ import json
 
 router = APIRouter(prefix="/market", tags=["Market"])
 
+POPULAR = ["BTC", "ETH", "SOL", "BNB", "OR", "PETROLE", "EUR", "GBP"]
 
 @router.get("/prices")
 def get_prices(current_user: User = Depends(get_current_user)):
@@ -54,6 +55,10 @@ async def price_websocket(websocket: WebSocket, asset: str):
     except Exception as e:
         print(f"Price WS erreur: {e}")
 
+@router.get("/prices/popular")
+def get_popular_prices(current_user: User = Depends(get_current_user)):
+    from app.services.market_service import get_price
+    return [get_price(asset) for asset in POPULAR]
 
 @router.websocket("/ws/prices")
 async def prices_websocket(websocket: WebSocket):

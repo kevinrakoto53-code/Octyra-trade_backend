@@ -99,7 +99,16 @@ def get_price(asset: str) -> dict:
 
 
 def get_all_prices() -> list:
-    return [get_price(asset) for asset in ASSETS.keys()]
+    cache_key = "all_prices"
+    cached = cache_get(cache_key)
+    if cached:
+        return json.loads(cached)
+
+    prices = [get_price(asset) for asset in ASSETS.keys()]
+    
+    prices = [p for p in prices if "error" not in p]
+    cache_set(cache_key, json.dumps(prices), expire=60)
+    return prices
 
 
 def get_candles(asset: str, period: str = "5d", interval: str = "1h") -> list:
